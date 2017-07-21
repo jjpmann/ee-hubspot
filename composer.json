@@ -1,0 +1,34 @@
+{   
+    "name": "jjpmann/ee-hubspot",
+    "type": "ee2-addon",
+    "description": "hubspot helpers.",
+    "keywords": ["eecms", "ee2", "hubspot"],
+    "homepage": "http://github.com/jjpmann/ee-hubspot",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jerry Price",
+            "email": "jjpmann@gmail.com",
+            "homepage": "http://github.com/jjpmann"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Subscribe\\": "."
+        }
+    },
+    "require": {
+        "php": ">=5.3.10",
+        "composer/installers": ">=1.1.0",
+        "ryanwinchester/hubspot-php": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.0",
+        "mockery/mockery": "^0.9.5",
+        "sllh/php-cs-fixer-styleci-bridge": "^2.1",
+        "friendsofphp/php-cs-fixer": "^1.11"
+    },
+    "extra": {
+        "installer-name": "hubspot"
+    }
+}
