@@ -9,6 +9,7 @@
  */
 
 require_once('config.php');
+require_once('HubSpot.php');
 
 class Hubspot
 {
@@ -17,6 +18,36 @@ class Hubspot
     public function __construct()
     {
         //ee()->load->model('subscribe_model');
+    }
+
+    public function latestBlogs()
+    {
+        $limit      = ee()->TMPL->fetch_param('limit', 10);
+        $topic      = ee()->TMPL->fetch_param('topic');
+        $tagdata    = ee()->TMPL->tagdata;
+        $hubspot    = new \jjpmann\EE\HubSpot();
+        $all        = $hubspot->blogs(); 
+
+        if ($topic) {
+            $all = $all->filter(function($item, $key) use ($topic) {
+                return in_array($topic, $item['topics']);
+            });
+        }
+
+        $blogs = $all->take($limit);
+        $count = 0;
+        $total = $blogs->count();
+
+        $blogs = $blogs->map(function($item, $key) use (&$count, $total){
+            $count++;
+            $item["count"] = $count;
+            $item["total_results"] = $total;
+            return $item;
+        });
+
+        $html = ee()->TMPL->parse_variables($tagdata, $blogs->values()->all());
+
+        return $html;
     }
 
     /**

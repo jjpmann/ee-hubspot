@@ -9,6 +9,7 @@
  */
 
 require_once('config.php');
+require_once('HubSpot.php');
 
 class Hubspot_mcp
 {
@@ -59,6 +60,20 @@ class Hubspot_mcp
 
         ee()->view->cp_breadcrumbs = [$this->base => lang('Hubspot')];
 
+        $hubspot = new \jjpmann\EE\HubSpot();
+        $blogs = $hubspot->blogs();
+
+        // $topic = 5225874677;
+        // $blogs = $blogs->filter(function($item, $key) use ($topic) {
+        //     return in_array($topic, $item['topics']);
+        // });
+
+        
+        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $blogs->toArray() ); exit;
+        
+        // // $topics = $hubspot->topics();
+        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $topics ); exit;
+        
 
         return ee()->load->view('settings', $vars, true);
     }
