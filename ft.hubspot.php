@@ -196,22 +196,25 @@ class Hubspot_ft extends EE_Fieldtype
             'row_alt_start' => '<tr class="odd">'
         ));
 
+        echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( collect($this->hubspot()->topics()) ); exit;
+        
+
         // "Preference" and "Setting" table headings
         ee()->table->set_heading(array('data' => lang('preference'), 'style' => 'width: 50%'), lang('setting'));
 
         ee()->table->add_row(
             lang('blog', 'blog'),
-            form_dropdown('blog', $this->hubspot()->blogs, $blog, 'id="blog"')
+            form_dropdown('blog', 'LMO', $blog, 'id="blog"')
         );
 
         ee()->table->add_row(
             lang('status', 'status'),
-            form_dropdown('status', $this->hubspot()->statuses, $status, 'id="status"')
+            form_dropdown('status', $this->hubspot()->statuses(), $status, 'id="status"')
         );
 
         ee()->table->add_row(
             lang('topic', 'topic'),
-            form_multiselect('topic', $this->hubspot()->topics, $topic, 'id="topic"')
+            form_multiselect('topic', collect($this->hubspot()->topics())->pluck('name'), $topic, 'id="topic"')
         );
 
         ee()->table->add_row(
@@ -221,7 +224,7 @@ class Hubspot_ft extends EE_Fieldtype
 
         ee()->table->add_row(
             lang('author', 'author'),
-            form_multiselect('author', $this->hubspot()->authors, $author, 'id="author"')
+            form_multiselect('author', collect($this->hubspot()->topics())->pluck('name'), $author, 'id="author"')
         );
         // function form_dropdown($name = '', $options = array(), $selected = array(), $extra = '')
     }
@@ -252,8 +255,8 @@ class Hubspot_ft extends EE_Fieldtype
     public function save_settings($data)
     {
         return array(
-            'type'      => ee()->input->post('type'),
-            'limit'     => ee()->input->post('limit'),
+            'blog'          => ee()->input->post('blog'),
+            'topic'          => ee()->input->post('topic'),
             'multiple'      => ee()->input->post('multiple'),
             'status'        => ee()->input->post('status'),
             'author'        => ee()->input->post('author'),
@@ -270,8 +273,11 @@ class Hubspot_ft extends EE_Fieldtype
     public function install()
     {
         return array(
-            'type'  => 'all',
-            'limit' => '',
+            'blog'      => '',
+            'topic'      => '',
+            'multiple'  => '',
+            'status'    => '',
+            'author'    => '', 
         );
     }
 

@@ -29,7 +29,43 @@ class HubSpot {
         
     }
 
+    public function statuses()
+    {
+        return [
+            'DRAFT',
+            'PUBLISHED'
+        ];
+    }
+
     public function topics()
+    {
+        $BlogTopics = new BlogTopics($this->client);
+        $cacheKey = '/hubpost/topics/' . date("Y-m-d");
+
+        $topics = []; //ee()->cache->get($cacheKey) ?: [];
+
+        if ( empty($topics) ) {
+            $response = $this->topicCache();
+            //$response = $this->getResponse($BlogTopics->all(['limit' => 999]))->objects;
+
+            foreach ($response as $topic) {
+                // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $topic ); exit;
+
+                $topics[] = [
+                    'id'            => $topic->id,
+                    'name'          => $topic->name,
+                    'slug'          => $topic->slug,
+                    'description'   => $topic->description,
+                ];
+            }
+            ee()->cache->save($cacheKey, $topics, 60*60*24);  // 24 hours
+        }
+
+        return $topics;
+
+    }
+
+    public function authors()
     {
         $BlogTopics = new BlogTopics($this->client);
         $cacheKey = '/hubpost/topics/' . date("Y-m-d");

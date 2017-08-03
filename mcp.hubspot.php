@@ -21,6 +21,8 @@ class Hubspot_mcp
 
     public $settings_exist = 'y';
 
+    protected $hubspot;
+
     public function __construct($switch = true)
     {
         // Make a local reference to the ExpressionEngine super object
@@ -61,8 +63,7 @@ class Hubspot_mcp
 
         ee()->view->cp_breadcrumbs = [$this->base => lang('Hubspot')];
 
-        $hubspot = new \jjpmann\EE\HubSpot();
-        $blogs = $hubspot->blogs();
+        // $blogs = $this->hubspot()->blogs();
 
         // $topic = 5225874677;
         // $blogs = $blogs->filter(function($item, $key) use ($topic) {
@@ -76,7 +77,20 @@ class Hubspot_mcp
         // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $topics ); exit;
         
 
-        return ee()->load->view('settings', $vars, true);
+        echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( 
+            compressByNameId($this->hubspot()->topics())
+        ); exit;
+        
+
+        return ee()->load->view('index', $vars, true);
+    }
+
+    protected function hubspot()
+    {
+        if (!$this->hubspot) {
+            $this->hubspot = new \jjpmann\EE\HubSpot();
+        }
+        return $this->hubspot;
     }
 
     public function hubspot_settings_validation()

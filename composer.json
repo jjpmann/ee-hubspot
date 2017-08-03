@@ -13,9 +13,9 @@
         }
     ],
     "autoload": {
-        "psr-4": {
-            "Subscribe\\": "."
-        }
+        "files": [
+            "helpers.php"
+        ]
     },
     "require": {
         "php": ">=5.3.10",

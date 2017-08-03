@@ -9,18 +9,18 @@ $this->table->set_heading(
     ['data' => lang('preference'), 'style' => 'width:50%;'],
     lang('setting')
 );
-    $this->table->add_row([
-            '<strong>Real Magnent Settings</strong>',
-            'These settings should be set in your <strong>.env</strong> file.',
-        ]);
-    $this->table->add_row([
-            lang('realmagnet_username', 'realmagnet_username'),
-            form_input('realmagnet_username', $realmagnet_username, 'class="field" disabled'),
-        ]);
-        $this->table->add_row([
-            lang('realmagnet_password', 'realmagnet_password'),
-            form_password('realmagnet_password', $realmagnet_password, 'class="field" disabled'),
-        ]);
+    // $this->table->add_row([
+    //         '<strong>Real Magnent Settings</strong>',
+    //         'These settings should be set in your <strong>.env</strong> file.',
+    //     ]);
+    // $this->table->add_row([
+    //         lang('realmagnet_username', 'realmagnet_username'),
+    //         form_input('realmagnet_username', $realmagnet_username, 'class="field" disabled'),
+    //     ]);
+    //     $this->table->add_row([
+    //         lang('realmagnet_password', 'realmagnet_password'),
+    //         form_password('realmagnet_password', $realmagnet_password, 'class="field" disabled'),
+    //     ]);
 
     // $this->table->add_row(array(
     // 		lang('subscribe_api_key', 'subscribe_api_key'),
