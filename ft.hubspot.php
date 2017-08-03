@@ -24,7 +24,10 @@ class Hubspot_ft extends EE_Fieldtype
         'version'   => HUBSPOT_VERSION
     );
 
-    var $has_array_data = TRUE;
+    public $has_array_data = TRUE;
+
+
+    protected $hubspot;
 
     /**
      * Replace tag
@@ -50,8 +53,7 @@ class Hubspot_ft extends EE_Fieldtype
             return ;
         }
 
-        $hubspot = new \jjpmann\EE\HubSpot();
-        $all = collect($hubspot->blogs());
+        $all = collect($this->hubspot()->blogs());
         $ids = $data['data'];
 
         $blogs = $all->filter(function($value, $key) use ($ids){
@@ -77,6 +79,14 @@ class Hubspot_ft extends EE_Fieldtype
 
 
         return $html;
+    }
+
+    protected function hubspot()
+    {
+        if (!$this->hubspot) {
+            $this->hubspot = new \jjpmann\EE\HubSpot();
+        }
+        return $this->hubspot;
     }
 
     /**
@@ -110,8 +120,7 @@ class Hubspot_ft extends EE_Fieldtype
             }
         }
 
-        $hubspot = new \jjpmann\EE\HubSpot();
-        $blogs = $hubspot->blogs();
+        $blogs = $this->hubspot()->blogs();
 
         ee()->cp->add_js_script(array(
             'plugin' => 'ee_interact.event',
@@ -175,9 +184,11 @@ class Hubspot_ft extends EE_Fieldtype
         ee()->lang->loadfile('hubspot');
 
         //$options = array('off', 'on');
-
-        $type   = isset($data['type']) ? $data['type'] : $this->settings['type'];
-        $limit  = isset($data['limit']) ? $data['limit'] : $this->settings['limit'];
+        $blog       = isset($data['blog']) ? $data['blog'] : $this->settings['blog'];
+        $topic      = isset($data['topic']) ? $data['topic'] : $this->settings['topic'];
+        $multiple   = isset($data['multiple']) ? $data['multiple'] : $this->settings['multiple'];
+        $status     = isset($data['status']) ? $data['status'] : $this->settings['status'];
+        $author     = isset($data['author']) ? $data['author'] : $this->settings['author'];
       
         ee()->table->set_template(array(
             'table_open'    => '<table class="mainTable padTable" border="0" cellspacing="0" cellpadding="0">',
@@ -189,13 +200,28 @@ class Hubspot_ft extends EE_Fieldtype
         ee()->table->set_heading(array('data' => lang('preference'), 'style' => 'width: 50%'), lang('setting'));
 
         ee()->table->add_row(
-            lang('type', 'type'),
-            form_dropdown('type', ['all' => 'All Blogs','cat' => 'By Category'], $type, 'id="type"')
+            lang('blog', 'blog'),
+            form_dropdown('blog', $this->hubspot()->blogs, $blog, 'id="blog"')
         );
 
         ee()->table->add_row(
-            lang('limit', 'limit'),
-            form_input('limit', '', $limit, 'id="limit"')
+            lang('status', 'status'),
+            form_dropdown('status', $this->hubspot()->statuses, $status, 'id="status"')
+        );
+
+        ee()->table->add_row(
+            lang('topic', 'topic'),
+            form_multiselect('topic', $this->hubspot()->topics, $topic, 'id="topic"')
+        );
+
+        ee()->table->add_row(
+            lang('multiple', 'multiple'),
+            form_checkbox('multiple', 'y', $multiple, 'id="multiple"')
+        );
+
+        ee()->table->add_row(
+            lang('author', 'author'),
+            form_multiselect('author', $this->hubspot()->authors, $author, 'id="author"')
         );
         // function form_dropdown($name = '', $options = array(), $selected = array(), $extra = '')
     }
@@ -228,6 +254,9 @@ class Hubspot_ft extends EE_Fieldtype
         return array(
             'type'      => ee()->input->post('type'),
             'limit'     => ee()->input->post('limit'),
+            'multiple'      => ee()->input->post('multiple'),
+            'status'        => ee()->input->post('status'),
+            'author'        => ee()->input->post('author'),
         );
     }
 

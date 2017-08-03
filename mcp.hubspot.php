@@ -53,7 +53,8 @@ class Hubspot_mcp
         //$this->_permissions_check();
         ee()->load->library('table');
 
-        $vars = ['action_url' => $this->base.AMP.'method=save_settings',
+        $vars = [
+            'action_url' => $this->base.AMP.'method=save_settings',
         ];
 
         ee()->view->cp_page_title = lang('hubspot_settings');
