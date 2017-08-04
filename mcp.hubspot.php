@@ -19,7 +19,7 @@ class Hubspot_mcp
 
     public $settings = [];
 
-    public $settings_exist = 'y';
+    public $settings_exist = 'n';
 
     protected $hubspot;
 
