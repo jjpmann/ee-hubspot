@@ -19,10 +19,9 @@ class Hubspot
 
     public function __construct()
     {
-        //ee()->load->model('subscribe_model');
     }
 
-    public function latestBlogs()
+    public function blogPosts()
     {
         $tagdata    = ee()->TMPL->tagdata;
         $limit      = ee()->TMPL->fetch_param('limit', 10);
@@ -51,20 +50,6 @@ class Hubspot
         $html = ee()->TMPL->parse_variables($tagdata, $blogs->values()->all());
 
         return $html;
-    }
-
-    /**
-     * Helper function for getting a parameter.
-     */
-    protected function _get_param($key, $default_value = '')
-    {
-        $val = ee()->TMPL->fetch_param($key);
-
-        if ($val == '') {
-            return $default_value;
-        }
-
-        return $val;
     }
 
     /**
