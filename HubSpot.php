@@ -3,9 +3,11 @@
 namespace jjpmann\EE;
 
 use SevenShores\Hubspot\Http\Client;
+use SevenShores\Hubspot\Resources\Blogs;
 use SevenShores\Hubspot\Resources\Contacts;
 use SevenShores\Hubspot\Resources\BlogPosts;
 use SevenShores\Hubspot\Resources\BlogTopics;
+use SevenShores\Hubspot\Resources\BlogAuthors;
 
 class HubSpot {
 
@@ -14,10 +16,8 @@ class HubSpot {
 
     protected $response;
 
-    protected $blogs;
-
-    protected $topics;
-
+    protected $filters = ['limit' => 999];
+    
     public function __construct($key = false)
     {
         $key = env('HUBSPOT_API_KEY') ?: $key;
@@ -29,24 +29,23 @@ class HubSpot {
         
     }
 
+
     public function statuses()
     {
         return [
-            'DRAFT',
-            'PUBLISHED'
+            ''          => '-- All --',
+            'DRAFT'     => 'Draft',
+            'PUBLISHED' => 'Published'
         ];
     }
 
     public function topics()
     {
-        $BlogTopics = new BlogTopics($this->client);
         $cacheKey = '/hubpost/topics/' . date("Y-m-d");
-
         $topics = []; //ee()->cache->get($cacheKey) ?: [];
 
         if ( empty($topics) ) {
             $response = $this->topicCache();
-            //$response = $this->getResponse($BlogTopics->all(['limit' => 999]))->objects;
 
             foreach ($response as $topic) {
                 // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $topic ); exit;
@@ -61,54 +60,48 @@ class HubSpot {
             ee()->cache->save($cacheKey, $topics, 60*60*24);  // 24 hours
         }
 
-        return $topics;
+        return collect($topics);
 
     }
 
     public function authors()
     {
-        $BlogTopics = new BlogTopics($this->client);
-        $cacheKey = '/hubpost/topics/' . date("Y-m-d");
+        $cacheKey = '/hubpost/authors/' . date("Y-m-d");
+        $authors = []; //ee()->cache->get($cacheKey) ?: [];
 
-        $topics = []; //ee()->cache->get($cacheKey) ?: [];
+        if ( empty($authors) ) {
+            $response = $this->authorCache();
 
-        if ( empty($topics) ) {
-            $response = $this->topicCache();
-            //$response = $this->getResponse($BlogTopics->all(['limit' => 999]))->objects;
-
-            foreach ($response as $topic) {
-                // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $topic ); exit;
-
-                $topics[] = [
-                    'id'            => $topic->id,
-                    'name'          => $topic->name,
-                    'slug'          => $topic->slug,
-                    'description'   => $topic->description,
+            foreach ($response as $author) {
+                //echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $author ); exit;
+    
+                $authors[] = [
+                    'id'            => $author->id,
+                    'name'          => $author->displayName,
+                    'slug'          => $author->slug,
+                    'image'         => $author->avatar,
+                    'bio'           => $author->bio,
                 ];
             }
-            ee()->cache->save($cacheKey, $topics, 60*60*24);  // 24 hours
+            ee()->cache->save($cacheKey, $authors, 60*60*24);  // 24 hours
         }
 
-        return $topics;
+        return collect($authors);
 
     }
 
-    public function blogs()
-    {
-        $blogs = new BlogPosts($this->client);
-        $cacheKey = '/hubpost/blogs-all/' . date("Y-m-d");
-
-        $cacheKey = '/hubpost/blogs/' . date("Y-m-d");
+    public function posts($filters = [])
+    {   
+        
+        $cacheKey = '/hubpost/posts/' . date("Y-m-d");
 
         $posts = []; //ee()->cache->get($cacheKey) ?: [];
         
         if ( empty($posts) ) {
-
-            $response = $this->blogCache(); //$blogs->all(['limit' => 999]);
+            $response = $this->postCache(); 
 
             foreach ($response as $post) {
-                // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $post ); exit;
-                
+
                 $this->getWidgets($post);
 
                 $posts[] = [
@@ -121,13 +114,80 @@ class HubSpot {
                     'listing_image' => $post->listing_image,
                     'status'        => $post->state,
                     'date'          => $post->publish_date,
+                    'author'        => isset($post->blog_author_id) ? $post->blog_author_id : 0,
+                    'blog'          => $post->content_group_id
                 ];
             }
 
             ee()->cache->save($cacheKey, $posts, 60*60*24);  // 24 hours
         }
 
-        return collect($posts);
+        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $filters ); exit;
+        
+
+        $posts = collect($posts);
+
+        foreach ($filters as $filter => $values) {
+            if (!$values || (is_array($values) && $values[0] == '')) {
+                continue;
+            }
+            // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $values ); exit;
+            
+
+            $posts = $posts->filter(function($item) use ($filter, $values) {
+               
+                if (is_array($values)) {
+                    foreach ($values as $value) {
+                        if (is_array($item[$filter]) && in_array($value, $item[$filter])) {
+                            return true;
+                        }
+
+                        if ($item[$filter] == $value) {
+                            return true;
+                        }
+                    }
+                }
+                
+                if (is_array($item[$filter]) && in_array($values, $item[$filter])) {
+                    return true;
+                }
+
+                if ($item[$filter] == $values) {
+                    return true;
+                }
+
+            });
+        }
+
+        return $posts;
+    }
+
+    public function blogs()
+    {
+        $cacheKey = '/hubpost/blogs/' . date("Y-m-d");
+
+        $blogs = []; //ee()->cache->get($cacheKey) ?: [];
+        
+        if ( empty($blogs) ) {
+            $response = $this->getResponse(
+                    (new Blogs($this->client))->all()
+            )->objects;
+            
+
+            foreach ($response as $blog) {
+                
+                $blogs[] = [
+                    'id'            => $blog->id,
+                    'name'         => $blog->public_title,
+                    'link'          => $blog->absolute_url,
+                    'html_title'    => $blog->html_title,
+                ];
+            }
+
+            ee()->cache->save($cacheKey, $blogs, 60*60*24);  // 24 hours
+        }
+
+        return collect($blogs);
     }
 
     protected function getWidgets(&$post)
@@ -178,38 +238,40 @@ class HubSpot {
     }
 
 
-
-
-    protected function blogCache()
+    protected function authorCache()
     {
-        $cacheKey = '/hubpost/blogs-all/' . date("Y-m-d");
+        $filters = $this->filters;
+        $callback = function() use ($filters) {
+            return (new BlogAuthors($this->client))->all($filters);
+        };
+        return $this->cache('authors-all', $filters, $callback);
+    }
 
-        $data = ee()->cache->get($cacheKey) ?: [];
-
-        if ( empty($data) ) {
-
-            $data = $this->getResponse(
-                (new BlogPosts($this->client))->all(['limit' => 999])
-            )->objects;
-            
-            ee()->cache->save($cacheKey, $data, 60*60*24);  // 24 hours
-        }
-
-        return $data;
+    protected function postCache()
+    {
+        $filters = $this->filters;
+        $callback = function() use ($filters) {
+            return (new BlogPosts($this->client))->all($filters);
+        };
+        return $this->cache('posts-all', $filters, $callback);
     }
 
     protected function topicCache()
     {
-        $cacheKey = '/hubpost/topics-all/' . date("Y-m-d");
+        $filters = $this->filters;
+        $callback = function() use ($filters) {
+            return (new BlogTopics($this->client))->all($filters);
+        };
+        return $this->cache('topics-all', $filters, $callback);
+    }
 
+    protected function cache($type, $filters, Callable $callback, $cacheTime = 60*60*24)
+    {
+        $cacheKey = '/hubpost/' . $type . '/' . md5(implode('-',$filters) . date("Y-m-d"));
         $data = ee()->cache->get($cacheKey) ?: [];
 
         if ( empty($data) ) {
-
-            $data = $this->getResponse(
-                    (new BlogTopics($this->client))->all(['limit' => 999])
-            )->objects;
-
+            $data = $this->getResponse( $callback() )->objects;
             ee()->cache->save($cacheKey, $data, 60*60*24);  // 24 hours
         }
 
@@ -237,41 +299,3 @@ class HubSpot {
     }
 
 }
-
-
-
-
-// // $contacts = new Contacts($client);
-
-// $topics = new BlogTopics($client);
-
-// $response = $topics->all(['limit'=>500]);
-
-// // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $response->data ); exit;
-
-// foreach ($response->data->objects as $topic) {
-//     $cats[] = $topic->name;
-// }
-
-// sort($cats);
-
-// echo implode('<br>', $cats);
-
-// exit;
-
-// public 'limit' => int 300
-// public 'offset' => int 0
-// public 'total' => int 119
-// public 'total_count' => int 119
-// public 'data' => array 119
-
-
-
-
-
-
-// $response = $blogs->getById(5239794142);
-
-
-
-// echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $response->data ); exit;

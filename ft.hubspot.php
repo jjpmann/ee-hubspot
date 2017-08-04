@@ -53,7 +53,10 @@ class Hubspot_ft extends EE_Fieldtype
             return ;
         }
 
-        $all = collect($this->hubspot()->blogs());
+        $all = collect($this->hubspot()->posts());
+
+
+
         $ids = $data['data'];
 
         $blogs = $all->filter(function($value, $key) use ($ids){
@@ -100,16 +103,12 @@ class Hubspot_ft extends EE_Fieldtype
     {
 
         $data = json_decode(htmlspecialchars_decode($data), true);
-        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $data, $json ); exit;
-        
+
         $field_name = $this->field_name;
         $entry_id = ee()->input->get('entry_id');
 
         $order = array();
         $selected = array();
-
-       // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $data ); exit;
-        
 
         if (is_array($data) && isset($data['data']) && ! empty($data['data'])) // autosave
         {
@@ -120,31 +119,40 @@ class Hubspot_ft extends EE_Fieldtype
             }
         }
 
-        $blogs = $this->hubspot()->blogs();
+        // Filters
+        $filters = [
+            'blog'      => $this->settings['blog'],
+            'topics'    => $this->settings['topics'],
+            'author'    => $this->settings['authors'],
+            'status'    => $this->settings['statuses'],
+        ];
+
+        $blogs = $this->hubspot()->posts($filters);
+
+
+        if ($this->settings['multiple'] != 'y')
+        {
+            $options[''] = '--';
+
+            foreach ($blogs as $blog)
+            {
+                $options[$blog['id']] = $blog['title'];
+            }
+            return form_dropdown($field_name.'[data][]', $options, current($selected));
+        }
 
         ee()->cp->add_js_script(array(
             'plugin' => 'ee_interact.event',
             'file' => 'cp/relationships',
             'ui' => 'sortable'
         ));
+
         ee()->javascript->output("EE.setup_relationship_field('".$this->field_name."');");
         $css_link = ee()->view->head_link('css/relationship.css');
         ee()->cp->add_to_head($css_link);
 
-        // $options[''] = '--';
-
-        // foreach ($blogs as $blog)
-        // {
-        //     $options[$blog['id']] = $blog['title'];
-        // }
-
-        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $options ); exit;
-        
-        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $field_name, $blogs, $selected, $order ); exit;
-        
-        // $html = '<div class="json-field '.$klass.'">'.$textarea.'<pre class="result"></pre></div>';
         return ee()->load->view('publish', compact('field_name', 'blogs', 'selected', 'order'), TRUE);
-        // return form_dropdown($field_name.'[]', $options, $selected, 'multiple');
+
     }
 
 
@@ -185,10 +193,10 @@ class Hubspot_ft extends EE_Fieldtype
 
         //$options = array('off', 'on');
         $blog       = isset($data['blog']) ? $data['blog'] : $this->settings['blog'];
-        $topic      = isset($data['topic']) ? $data['topic'] : $this->settings['topic'];
+        $topics      = isset($data['topics']) ? $data['topics'] : $this->settings['topics'];
         $multiple   = isset($data['multiple']) ? $data['multiple'] : $this->settings['multiple'];
-        $status     = isset($data['status']) ? $data['status'] : $this->settings['status'];
-        $author     = isset($data['author']) ? $data['author'] : $this->settings['author'];
+        $statuses     = isset($data['statuses']) ? $data['statuses'] : $this->settings['statuses'];
+        $authors     = isset($data['authors']) ? $data['authors'] : $this->settings['authors'];
       
         ee()->table->set_template(array(
             'table_open'    => '<table class="mainTable padTable" border="0" cellspacing="0" cellpadding="0">',
@@ -196,36 +204,38 @@ class Hubspot_ft extends EE_Fieldtype
             'row_alt_start' => '<tr class="odd">'
         ));
 
-        echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( collect($this->hubspot()->topics()) ); exit;
-        
-
         // "Preference" and "Setting" table headings
         ee()->table->set_heading(array('data' => lang('preference'), 'style' => 'width: 50%'), lang('setting'));
 
         ee()->table->add_row(
-            lang('blog', 'blog'),
-            form_dropdown('blog', 'LMO', $blog, 'id="blog"')
+            lang('blog_label', 'blog'),
+            form_dropdown('blog', compressByNameId($this->hubspot()->blogs()->all()), $blog, 'id="blog"')
         );
 
         ee()->table->add_row(
-            lang('status', 'status'),
-            form_dropdown('status', $this->hubspot()->statuses(), $status, 'id="status"')
+            lang('statuses_label', 'statuses'),
+            form_multiselect('statuses[]', $this->hubspot()->statuses(), $statuses, 'id="statuses" style="width:60%; min-height: 40px;"')
+        );
+
+        $allTopics = ['' => '-- All --'] + compressByNameId($this->hubspot()->topics()->all())->all();
+
+        ee()->table->add_row(
+            lang('topics_label', 'topics_label'),
+            form_multiselect('topics[]', $allTopics, $topics, 'id="topics" style="width:60%; min-height: 80px;"')
+        );
+
+        $allAuthors = ['' => '-- All --'] + compressByNameId($this->hubspot()->authors()->all())->all();
+
+        ee()->table->add_row(
+            lang('authors_label', 'authors'),
+            form_multiselect('authors[]', $allAuthors, $authors, 'id="authors" style="width:60%; min-height: 80px;"')
         );
 
         ee()->table->add_row(
-            lang('topic', 'topic'),
-            form_multiselect('topic', collect($this->hubspot()->topics())->pluck('name'), $topic, 'id="topic"')
-        );
-
-        ee()->table->add_row(
-            lang('multiple', 'multiple'),
+            lang('multiple_label', 'multiple'),
             form_checkbox('multiple', 'y', $multiple, 'id="multiple"')
         );
 
-        ee()->table->add_row(
-            lang('author', 'author'),
-            form_multiselect('author', collect($this->hubspot()->topics())->pluck('name'), $author, 'id="author"')
-        );
         // function form_dropdown($name = '', $options = array(), $selected = array(), $extra = '')
     }
 
@@ -255,11 +265,11 @@ class Hubspot_ft extends EE_Fieldtype
     public function save_settings($data)
     {
         return array(
-            'blog'          => ee()->input->post('blog'),
-            'topic'          => ee()->input->post('topic'),
-            'multiple'      => ee()->input->post('multiple'),
-            'status'        => ee()->input->post('status'),
-            'author'        => ee()->input->post('author'),
+            'blog'      => ee()->input->post('blog'),
+            'topics'    => array_filter(ee()->input->post('topics')) ?: [''],
+            'multiple'  => ee()->input->post('multiple'),
+            'statuses'  => array_filter(ee()->input->post('statuses')) ?: [''],
+            'authors'   => array_filter(ee()->input->post('authors')) ?: [''],
         );
     }
 
@@ -274,10 +284,10 @@ class Hubspot_ft extends EE_Fieldtype
     {
         return array(
             'blog'      => '',
-            'topic'      => '',
+            'topics'    => '',
             'multiple'  => '',
-            'status'    => '',
-            'author'    => '', 
+            'statuses'  => '',
+            'authors'   => '', 
         );
     }
 

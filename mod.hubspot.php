@@ -15,6 +15,8 @@ class Hubspot
 {
     public $return_data;
 
+    protected $hubspot;
+
     public function __construct()
     {
         //ee()->load->model('subscribe_model');
@@ -22,19 +24,20 @@ class Hubspot
 
     public function latestBlogs()
     {
-        $limit      = ee()->TMPL->fetch_param('limit', 10);
-        $topic      = ee()->TMPL->fetch_param('topic');
         $tagdata    = ee()->TMPL->tagdata;
-        $hubspot    = new \jjpmann\EE\HubSpot();
-        $all        = $hubspot->blogs(); 
+        $limit      = ee()->TMPL->fetch_param('limit', 10);
 
-        if ($topic) {
-            $all = $all->filter(function($item, $key) use ($topic) {
-                return in_array($topic, $item['topics']);
-            });
-        }
+        // Filters
+        $filters = [
+            'blog'      => explode('|', ee()->TMPL->fetch_param('blog')),
+            'topics'    => explode('|', ee()->TMPL->fetch_param('topic')),
+            'author'    => explode('|', ee()->TMPL->fetch_param('author')),
+            'status'    => explode('|', ee()->TMPL->fetch_param('status'))
+        ];
 
-        $blogs = $all->take($limit);
+        $blogs = $this->hubspot()->posts($filters)->take($limit);
+// echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $blogs ); exit;
+
         $count = 0;
         $total = $blogs->count();
 
@@ -70,5 +73,13 @@ class Hubspot
     protected function _error_log($msg)
     {
         ee()->TMPL->log_item('Hubspot ERROR: '.$msg);
+    }
+
+    protected function hubspot()
+    {
+        if (!$this->hubspot) {
+            $this->hubspot = new \jjpmann\EE\HubSpot();
+        }
+        return $this->hubspot;
     }
 }

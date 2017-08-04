@@ -63,8 +63,19 @@ class Hubspot_mcp
 
         ee()->view->cp_breadcrumbs = [$this->base => lang('Hubspot')];
 
-        // $blogs = $this->hubspot()->blogs();
+        // $blogs = $this->hubspot()->blogs();        
+        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $blogs ); exit;
 
+        // $authors = $this->hubspot()->authors();
+        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $authors->pluck('id')->unique()->sort() ); exit;
+        
+        // $topics = $this->hubspot()->topics();        
+        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $topics ); exit;
+
+
+        // $posts = $this->hubspot()->posts();        
+        // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $posts ); exit;
+        
         // $topic = 5225874677;
         // $blogs = $blogs->filter(function($item, $key) use ($topic) {
         //     return in_array($topic, $item['topics']);
@@ -75,11 +86,7 @@ class Hubspot_mcp
         
         // // $topics = $hubspot->topics();
         // echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( $topics ); exit;
-        
 
-        echo "<pre>".__FILE__.'<br>'.__METHOD__.' : '.__LINE__."<br><br>"; var_dump( 
-            compressByNameId($this->hubspot()->topics())
-        ); exit;
         
 
         return ee()->load->view('index', $vars, true);
